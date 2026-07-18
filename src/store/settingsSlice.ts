@@ -4,22 +4,35 @@ export interface SettingsState {
   githubToken: string
   defaultLanguage: string
   demoTriesUsed: number
+  resumeTriesUsed: number
   dailyUsageDate: string // YYYY-MM-DD, resets counters below when it changes
   adviceUsedToday: number
   realityCheckUsedToday: number
+  resumeUsedToday: number
 }
 
 const STORAGE_KEY = 'oss-finder-settings'
 export const DEMO_TRY_LIMIT = 2
+export const RESUME_DEMO_LIMIT = 1
 export const FREE_ADVICE_DAILY_LIMIT = 5
 export const FREE_REALITY_CHECK_DAILY_LIMIT = 3
+export const FREE_RESUME_DAILY_LIMIT = 2
 
 function today() {
   return new Date().toISOString().slice(0, 10)
 }
 
 function load(): SettingsState {
-  const base = { githubToken: '', defaultLanguage: '', demoTriesUsed: 0, dailyUsageDate: today(), adviceUsedToday: 0, realityCheckUsedToday: 0 }
+  const base: SettingsState = {
+    githubToken: '',
+    defaultLanguage: '',
+    demoTriesUsed: 0,
+    resumeTriesUsed: 0,
+    dailyUsageDate: today(),
+    adviceUsedToday: 0,
+    realityCheckUsedToday: 0,
+    resumeUsedToday: 0,
+  }
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (raw) {
@@ -29,9 +42,11 @@ function load(): SettingsState {
         githubToken: typeof p.githubToken === 'string' ? p.githubToken : base.githubToken,
         defaultLanguage: typeof p.defaultLanguage === 'string' ? p.defaultLanguage : base.defaultLanguage,
         demoTriesUsed: typeof p.demoTriesUsed === 'number' ? p.demoTriesUsed : base.demoTriesUsed,
+        resumeTriesUsed: typeof p.resumeTriesUsed === 'number' ? p.resumeTriesUsed : base.resumeTriesUsed,
         dailyUsageDate: today(),
         adviceUsedToday: sameDay && typeof p.adviceUsedToday === 'number' ? p.adviceUsedToday : 0,
         realityCheckUsedToday: sameDay && typeof p.realityCheckUsedToday === 'number' ? p.realityCheckUsedToday : 0,
+        resumeUsedToday: sameDay && typeof p.resumeUsedToday === 'number' ? p.resumeUsedToday : 0,
       }
     }
   } catch {
@@ -61,11 +76,17 @@ const settingsSlice = createSlice({
     useDemoTry(state) {
       state.demoTriesUsed += 1
     },
+    useResumeDemoTry(state) {
+      state.resumeTriesUsed += 1
+    },
     useAdviceQuota(state) {
       state.adviceUsedToday += 1
     },
     useRealityCheckQuota(state) {
       state.realityCheckUsedToday += 1
+    },
+    useResumeQuota(state) {
+      state.resumeUsedToday += 1
     },
   },
 })
@@ -74,7 +95,9 @@ export const {
   setGithubToken,
   setDefaultLanguage,
   useDemoTry,
+  useResumeDemoTry,
   useAdviceQuota,
   useRealityCheckQuota,
+  useResumeQuota,
 } = settingsSlice.actions
 export default settingsSlice.reducer

@@ -9,6 +9,7 @@ import { Dashboard } from './components/Dashboard'
 import { History } from './components/History'
 import { Settings } from './components/Settings'
 import { Pricing } from './components/Pricing'
+import { ResumeMatch } from './components/ResumeMatch'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { useAppDispatch, useAppSelector } from './store'
 import { addSkill } from './store/filtersSlice'
@@ -77,6 +78,14 @@ export default function App() {
           element={
             <main className="mx-auto max-w-5xl px-4 py-8">
               <ProtectedRoute><Settings /></ProtectedRoute>
+            </main>
+          }
+        />
+        <Route
+          path="/app/resume-match"
+          element={
+            <main className="mx-auto max-w-5xl px-4 py-8">
+              <ResumeMatch />
             </main>
           }
         />

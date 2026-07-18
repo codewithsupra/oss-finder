@@ -19,6 +19,26 @@ export interface RepoPulse {
   medianDaysToMerge: number | null
 }
 
+export interface RecommendedRepo {
+  language: string
+  fullName: string
+  description: string | null
+  url: string
+  stars: number
+  openIssues: number
+}
+
+interface GitHubRepoSearchItem {
+  full_name: string
+  description: string | null
+  html_url: string
+  stargazers_count: number
+  open_issues_count: number
+}
+interface GitHubRepoSearchResponse {
+  items: GitHubRepoSearchItem[]
+}
+
 function activityToDate(activity: ActivityFilter): string | null {
   const days = { week: 7, month: 30, '3months': 90, any: 0 }[activity]
   if (!days) return null
@@ -111,7 +131,46 @@ export const githubApi = createApi({
       },
       keepUnusedDataFor: 1800,
     }),
+
+    // Resume Match: for each candidate language, find the single most-starred
+    // active repo that actually has good-first-issues open — a recommendation
+    // is only useful if there's somewhere to start today.
+    recommendReposForLanguages: builder.query<RecommendedRepo[], string[]>({
+      queryFn: async (languages, _api, _opts, baseQuery) => {
+        const results = await Promise.all(
+          languages.map(async (language) => {
+            const res = await baseQuery({
+              url: 'search/repositories',
+              params: {
+                q: `language:"${language}" good-first-issues:>2 archived:false stars:>50`,
+                sort: 'stars',
+                order: 'desc',
+                per_page: 1,
+              },
+            })
+            if (res.error) return null
+            const item = (res.data as GitHubRepoSearchResponse).items[0]
+            if (!item) return null
+            const repo: RecommendedRepo = {
+              language,
+              fullName: item.full_name,
+              description: item.description,
+              url: item.html_url,
+              stars: item.stargazers_count,
+              openIssues: item.open_issues_count,
+            }
+            return repo
+          }),
+        )
+        return { data: results.filter((r): r is RecommendedRepo => r !== null) }
+      },
+      keepUnusedDataFor: 1800,
+    }),
   }),
 })
 
-export const { useSearchIssuesQuery, useLazyRepoPulseQuery } = githubApi
+export const {
+  useSearchIssuesQuery,
+  useLazyRepoPulseQuery,
+  useLazyRecommendReposForLanguagesQuery,
+} = githubApi

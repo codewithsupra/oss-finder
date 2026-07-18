@@ -23,6 +23,11 @@ const FEATURES = [
     title: 'AI merge advice',
     body: 'Per-issue coaching from an AI maintainer: how to claim it, what to investigate first, and what reviewers of that repo will look for in your PR.',
   },
+  {
+    icon: '📄',
+    title: 'Resume → repo match',
+    body: 'Upload your resume (parsed entirely in your browser — the file never leaves your device) and get 3 real repos matched to your strongest languages, each with open good-first-issues.',
+  },
 ]
 
 export function Landing() {
