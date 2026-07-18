@@ -1,0 +1,80 @@
+import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
+
+export interface SettingsState {
+  githubToken: string
+  defaultLanguage: string
+  demoTriesUsed: number
+  dailyUsageDate: string // YYYY-MM-DD, resets counters below when it changes
+  adviceUsedToday: number
+  realityCheckUsedToday: number
+}
+
+const STORAGE_KEY = 'oss-finder-settings'
+export const DEMO_TRY_LIMIT = 2
+export const FREE_ADVICE_DAILY_LIMIT = 5
+export const FREE_REALITY_CHECK_DAILY_LIMIT = 3
+
+function today() {
+  return new Date().toISOString().slice(0, 10)
+}
+
+function load(): SettingsState {
+  const base = { githubToken: '', defaultLanguage: '', demoTriesUsed: 0, dailyUsageDate: today(), adviceUsedToday: 0, realityCheckUsedToday: 0 }
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (raw) {
+      const p = JSON.parse(raw)
+      const sameDay = p.dailyUsageDate === today()
+      return {
+        githubToken: typeof p.githubToken === 'string' ? p.githubToken : base.githubToken,
+        defaultLanguage: typeof p.defaultLanguage === 'string' ? p.defaultLanguage : base.defaultLanguage,
+        demoTriesUsed: typeof p.demoTriesUsed === 'number' ? p.demoTriesUsed : base.demoTriesUsed,
+        dailyUsageDate: today(),
+        adviceUsedToday: sameDay && typeof p.adviceUsedToday === 'number' ? p.adviceUsedToday : 0,
+        realityCheckUsedToday: sameDay && typeof p.realityCheckUsedToday === 'number' ? p.realityCheckUsedToday : 0,
+      }
+    }
+  } catch {
+    // corrupt storage — defaults
+  }
+  return base
+}
+
+export function persistSettings(state: SettingsState) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+  } catch {
+    // non-fatal
+  }
+}
+
+const settingsSlice = createSlice({
+  name: 'settings',
+  initialState: load(),
+  reducers: {
+    setGithubToken(state, action: PayloadAction<string>) {
+      state.githubToken = action.payload.trim()
+    },
+    setDefaultLanguage(state, action: PayloadAction<string>) {
+      state.defaultLanguage = action.payload
+    },
+    useDemoTry(state) {
+      state.demoTriesUsed += 1
+    },
+    useAdviceQuota(state) {
+      state.adviceUsedToday += 1
+    },
+    useRealityCheckQuota(state) {
+      state.realityCheckUsedToday += 1
+    },
+  },
+})
+
+export const {
+  setGithubToken,
+  setDefaultLanguage,
+  useDemoTry,
+  useAdviceQuota,
+  useRealityCheckQuota,
+} = settingsSlice.actions
+export default settingsSlice.reducer

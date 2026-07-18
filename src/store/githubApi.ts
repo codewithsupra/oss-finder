@@ -1,0 +1,117 @@
+import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
+import type { ActivityFilter, SearchIssuesResponse, SortOption } from '../lib/types'
+import type { RootState } from './index'
+
+export interface IssueQueryArgs {
+  languages: string[]
+  activity: ActivityFilter
+  sort: SortOption
+  page: number
+}
+
+export interface RepoPulse {
+  pushedAt: string
+  archived: boolean
+  stars: number
+  openIssues: number
+  mergedSampleSize: number
+  externalMergedCount: number
+  medianDaysToMerge: number | null
+}
+
+function activityToDate(activity: ActivityFilter): string | null {
+  const days = { week: 7, month: 30, '3months': 90, any: 0 }[activity]
+  if (!days) return null
+  return new Date(Date.now() - days * 86_400_000).toISOString().slice(0, 10)
+}
+
+export const githubApi = createApi({
+  reducerPath: 'githubApi',
+  baseQuery: fetchBaseQuery({
+    baseUrl: 'https://api.github.com/',
+    prepareHeaders: (headers, { getState }) => {
+      headers.set('Accept', 'application/vnd.github+json')
+      // User-supplied token from Settings raises the search limit 10 -> 30 req/min
+      const token =
+        (getState() as RootState).settings.githubToken || import.meta.env.VITE_GITHUB_TOKEN
+      if (token) headers.set('Authorization', `Bearer ${token}`)
+      return headers
+    },
+  }),
+  // Search results go stale fast; keep cache short but nonzero so
+  // toggling filters back and forth doesn't refetch.
+  keepUnusedDataFor: 120,
+  endpoints: (builder) => ({
+    searchIssues: builder.query<SearchIssuesResponse, IssueQueryArgs>({
+      query: ({ languages, activity, sort, page }) => {
+        const parts = ['label:"good first issue"', 'state:open', 'is:issue', 'no:assignee']
+        if (languages[0]) parts.push(`language:"${languages[0]}"`)
+        const updated = activityToDate(activity)
+        if (updated) parts.push(`updated:>=${updated}`)
+        return {
+          url: 'search/issues',
+          params: {
+            q: parts.join(' '),
+            sort: sort === 'created' ? undefined : sort,
+            order: 'desc',
+            per_page: 20,
+            page,
+          },
+        }
+      },
+    }),
+
+    // Merge Reality Check: two requests per repo, cached 30 min.
+    // "Will a stranger's PR actually get merged here?" is not directly
+    // observable, so we infer it from proxies: recency of pushes, the share
+    // of recently merged PRs authored by non-owners, and median time-to-merge.
+    repoPulse: builder.query<RepoPulse, string>({
+      queryFn: async (repo, _api, _opts, baseQuery) => {
+        const [owner] = repo.split('/')
+
+        const repoRes = await baseQuery(`repos/${repo}`)
+        if (repoRes.error) return { error: repoRes.error }
+        const meta = repoRes.data as {
+          pushed_at: string
+          archived: boolean
+          stargazers_count: number
+          open_issues_count: number
+        }
+
+        const prsRes = await baseQuery({
+          url: 'search/issues',
+          params: { q: `repo:${repo} is:pr is:merged`, sort: 'updated', order: 'desc', per_page: 10 },
+        })
+        if (prsRes.error) return { error: prsRes.error }
+        const prs = (prsRes.data as SearchIssuesResponse).items
+
+        const external = prs.filter((p) => p.user.login.toLowerCase() !== owner.toLowerCase())
+        const mergeDays = prs
+          .map((p) => {
+            const closed = (p as { closed_at?: string }).closed_at
+            if (!closed) return null
+            return (new Date(closed).getTime() - new Date(p.created_at).getTime()) / 86_400_000
+          })
+          .filter((d): d is number => d !== null)
+          .sort((a, b) => a - b)
+
+        return {
+          data: {
+            pushedAt: meta.pushed_at,
+            archived: meta.archived,
+            stars: meta.stargazers_count,
+            openIssues: meta.open_issues_count,
+            mergedSampleSize: prs.length,
+            externalMergedCount: external.length,
+            medianDaysToMerge: mergeDays.length
+              ? Math.round(mergeDays[Math.floor(mergeDays.length / 2)] * 10) / 10
+              : null,
+          },
+        }
+      },
+      keepUnusedDataFor: 1800,
+    }),
+  }),
+})
+
+export const { useSearchIssuesQuery, useLazyRepoPulseQuery } = githubApi
