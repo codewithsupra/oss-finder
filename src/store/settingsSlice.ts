@@ -2,6 +2,7 @@ import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
 
 export interface SettingsState {
   githubToken: string
+  githubUsername: string
   defaultLanguage: string
   demoTriesUsed: number
   resumeTriesUsed: number
@@ -25,6 +26,7 @@ function today() {
 function load(): SettingsState {
   const base: SettingsState = {
     githubToken: '',
+    githubUsername: '',
     defaultLanguage: '',
     demoTriesUsed: 0,
     resumeTriesUsed: 0,
@@ -40,6 +42,7 @@ function load(): SettingsState {
       const sameDay = p.dailyUsageDate === today()
       return {
         githubToken: typeof p.githubToken === 'string' ? p.githubToken : base.githubToken,
+        githubUsername: typeof p.githubUsername === 'string' ? p.githubUsername : base.githubUsername,
         defaultLanguage: typeof p.defaultLanguage === 'string' ? p.defaultLanguage : base.defaultLanguage,
         demoTriesUsed: typeof p.demoTriesUsed === 'number' ? p.demoTriesUsed : base.demoTriesUsed,
         resumeTriesUsed: typeof p.resumeTriesUsed === 'number' ? p.resumeTriesUsed : base.resumeTriesUsed,
@@ -70,6 +73,9 @@ const settingsSlice = createSlice({
     setGithubToken(state, action: PayloadAction<string>) {
       state.githubToken = action.payload.trim()
     },
+    setGithubUsername(state, action: PayloadAction<string>) {
+      state.githubUsername = action.payload.trim()
+    },
     setDefaultLanguage(state, action: PayloadAction<string>) {
       state.defaultLanguage = action.payload
     },
@@ -93,6 +99,7 @@ const settingsSlice = createSlice({
 
 export const {
   setGithubToken,
+  setGithubUsername,
   setDefaultLanguage,
   useDemoTry,
   useResumeDemoTry,

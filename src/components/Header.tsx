@@ -5,6 +5,7 @@ import { clerkEnabled, useAuth } from '../lib/auth'
 const TABS = [
   { to: '/app', label: 'Find', end: true },
   { to: '/app/resume-match', label: 'Resume Match', end: false },
+  { to: '/app/my-repos', label: 'My Repos', end: false },
   { to: '/app/dashboard', label: 'Dashboard', end: false },
   { to: '/app/history', label: 'History', end: false },
   { to: '/pricing', label: 'Pricing', end: false },

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useAppDispatch, useAppSelector } from '../store'
-import { setDefaultLanguage, setGithubToken } from '../store/settingsSlice'
+import { setDefaultLanguage, setGithubToken, setGithubUsername } from '../store/settingsSlice'
 import { clearHistory } from '../store/activitySlice'
 import { addSkill } from '../store/filtersSlice'
 
@@ -8,8 +8,9 @@ const LANGUAGES = ['', 'TypeScript', 'JavaScript', 'Python', 'Go', 'Rust', 'Java
 
 export function Settings() {
   const dispatch = useAppDispatch()
-  const { githubToken, defaultLanguage } = useAppSelector((s) => s.settings)
+  const { githubToken, githubUsername, defaultLanguage } = useAppSelector((s) => s.settings)
   const [tokenInput, setTokenInput] = useState(githubToken)
+  const [usernameInput, setUsernameInput] = useState(githubUsername)
   const [savedFlash, setSavedFlash] = useState(false)
 
   const saveToken = () => {
@@ -63,6 +64,22 @@ export function Settings() {
             Remove stored token
           </button>
         )}
+      </section>
+
+      <section className="rounded-xl border border-slate-800 bg-slate-900/60 p-5">
+        <h3 className="text-sm font-semibold text-slate-200">GitHub username</h3>
+        <p className="mt-1 text-xs leading-relaxed text-slate-400">
+          Used by My Repos to find your merged PRs when syncing XP. Not the same as the token above.
+        </p>
+        <div className="mt-3 flex gap-2">
+          <input
+            value={usernameInput}
+            onChange={(e) => setUsernameInput(e.target.value)}
+            onBlur={() => dispatch(setGithubUsername(usernameInput))}
+            placeholder="your-github-username"
+            className="flex-1 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none focus:border-indigo-500"
+          />
+        </div>
       </section>
 
       <section className="rounded-xl border border-slate-800 bg-slate-900/60 p-5">

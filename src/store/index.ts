@@ -5,12 +5,14 @@ import { githubApi } from './githubApi'
 import filtersReducer from './filtersSlice'
 import activityReducer, { persistActivity } from './activitySlice'
 import settingsReducer, { persistSettings } from './settingsSlice'
+import progressReducer, { persistProgress } from './progressSlice'
 
 export const store = configureStore({
   reducer: {
     filters: filtersReducer,
     activity: activityReducer,
     settings: settingsReducer,
+    progress: progressReducer,
     [githubApi.reducerPath]: githubApi.reducer,
   },
   middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(githubApi.middleware),
@@ -19,6 +21,7 @@ export const store = configureStore({
 store.subscribe(() => {
   persistActivity(store.getState().activity)
   persistSettings(store.getState().settings)
+  persistProgress(store.getState().progress)
 })
 
 // refetchOnFocus / refetchOnReconnect support

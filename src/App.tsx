@@ -10,6 +10,7 @@ import { History } from './components/History'
 import { Settings } from './components/Settings'
 import { Pricing } from './components/Pricing'
 import { ResumeMatch } from './components/ResumeMatch'
+import { MyRepos } from './components/MyRepos'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { useAppDispatch, useAppSelector } from './store'
 import { addSkill } from './store/filtersSlice'
@@ -86,6 +87,14 @@ export default function App() {
           element={
             <main className="mx-auto max-w-5xl px-4 py-8">
               <ResumeMatch />
+            </main>
+          }
+        />
+        <Route
+          path="/app/my-repos"
+          element={
+            <main className="mx-auto max-w-5xl px-4 py-8">
+              <ProtectedRoute><MyRepos /></ProtectedRoute>
             </main>
           }
         />

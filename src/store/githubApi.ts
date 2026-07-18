@@ -39,6 +39,13 @@ interface GitHubRepoSearchResponse {
   items: GitHubRepoSearchItem[]
 }
 
+export interface MergedPR {
+  number: number
+  title: string
+  mergedAt: string
+  htmlUrl: string
+}
+
 function activityToDate(activity: ActivityFilter): string | null {
   const days = { week: 7, month: 30, '3months': 90, any: 0 }[activity]
   if (!days) return null
@@ -166,6 +173,38 @@ export const githubApi = createApi({
       },
       keepUnusedDataFor: 1800,
     }),
+
+    // Repo sync: does {repo} actually exist? Cheap existence check before
+    // tracking it, so a typo shows up immediately instead of on first sync.
+    checkRepoExists: builder.query<boolean, string>({
+      queryFn: async (repo, _api, _opts, baseQuery) => {
+        const res = await baseQuery(`repos/${repo}`)
+        return { data: !res.error }
+      },
+    }),
+
+    // Repo sync: merged PRs by this user in a tracked repo, used to award XP.
+    // closed_at is used as the merge-date proxy (same convention as
+    // repoPulse's median-days-to-merge calc above) — the search/issues
+    // endpoint doesn't surface a dedicated merged_at field.
+    mergedPRsByAuthor: builder.query<MergedPR[], { repo: string; username: string }>({
+      query: ({ repo, username }) => ({
+        url: 'search/issues',
+        params: {
+          q: `repo:${repo} is:pr is:merged author:${username}`,
+          sort: 'created',
+          order: 'desc',
+          per_page: 100,
+        },
+      }),
+      transformResponse: (res: SearchIssuesResponse): MergedPR[] =>
+        res.items.map((item) => ({
+          number: item.number,
+          title: item.title,
+          mergedAt: (item as { closed_at?: string }).closed_at ?? item.updated_at,
+          htmlUrl: item.html_url,
+        })),
+    }),
   }),
 })
 
@@ -173,4 +212,6 @@ export const {
   useSearchIssuesQuery,
   useLazyRepoPulseQuery,
   useLazyRecommendReposForLanguagesQuery,
+  useLazyCheckRepoExistsQuery,
+  useLazyMergedPRsByAuthorQuery,
 } = githubApi

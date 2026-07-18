@@ -28,6 +28,11 @@ const FEATURES = [
     title: 'Resume → repo match',
     body: 'Upload your resume (parsed entirely in your browser — the file never leaves your device) and get 3 real repos matched to your strongest languages, each with open good-first-issues.',
   },
+  {
+    icon: '🏆',
+    title: 'Track repos, earn XP',
+    body: 'Add repos you contribute to and sync your merged PRs from GitHub — each one earns XP, with a level and weekly activity graph to show real progress over time.',
+  },
 ]
 
 export function Landing() {
