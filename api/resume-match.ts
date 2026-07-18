@@ -7,6 +7,7 @@ const KNOWN_LANGUAGES = [
   'TypeScript', 'JavaScript', 'Python', 'Go', 'Rust', 'Java', 'C++', 'C', 'C#',
   'Ruby', 'PHP', 'Swift', 'Kotlin', 'Scala', 'Shell', 'HTML', 'CSS', 'Dart',
 ]
+const LANGUAGE_BY_LOWERCASE = new Map(KNOWN_LANGUAGES.map((l) => [l.toLowerCase(), l]))
 
 const SYSTEM_PROMPT =
   'You are a technical recruiter matching engineers to open-source projects. ' +
@@ -61,8 +62,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!jsonMatch) return res.status(502).json({ error: 'Could not parse analysis' })
 
     const parsed = JSON.parse(jsonMatch[0])
-    const languages = Array.isArray(parsed.languages)
-      ? parsed.languages.filter((l: unknown) => typeof l === 'string' && KNOWN_LANGUAGES.includes(l)).slice(0, 3)
+    const languages: string[] = Array.isArray(parsed.languages)
+      ? parsed.languages
+          .map((l: unknown) => (typeof l === 'string' ? LANGUAGE_BY_LOWERCASE.get(l.trim().toLowerCase()) : undefined))
+          .filter((l: string | undefined): l is string => Boolean(l))
+          .slice(0, 3)
       : []
     if (languages.length === 0) {
       return res.status(502).json({ error: 'No recognizable languages found in resume' })
