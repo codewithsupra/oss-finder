@@ -79,19 +79,19 @@ const settingsSlice = createSlice({
     setDefaultLanguage(state, action: PayloadAction<string>) {
       state.defaultLanguage = action.payload
     },
-    useDemoTry(state) {
+    consumeDemoTry(state) {
       state.demoTriesUsed += 1
     },
-    useResumeDemoTry(state) {
+    consumeResumeDemoTry(state) {
       state.resumeTriesUsed += 1
     },
-    useAdviceQuota(state) {
+    consumeAdviceQuota(state) {
       state.adviceUsedToday += 1
     },
-    useRealityCheckQuota(state) {
+    consumeRealityCheckQuota(state) {
       state.realityCheckUsedToday += 1
     },
-    useResumeQuota(state) {
+    consumeResumeQuota(state) {
       state.resumeUsedToday += 1
     },
   },
@@ -101,10 +101,10 @@ export const {
   setGithubToken,
   setGithubUsername,
   setDefaultLanguage,
-  useDemoTry,
-  useResumeDemoTry,
-  useAdviceQuota,
-  useRealityCheckQuota,
-  useResumeQuota,
+  consumeDemoTry,
+  consumeResumeDemoTry,
+  consumeAdviceQuota,
+  consumeRealityCheckQuota,
+  consumeResumeQuota,
 } = settingsSlice.actions
 export default settingsSlice.reducer

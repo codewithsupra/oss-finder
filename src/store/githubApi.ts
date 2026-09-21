@@ -1,6 +1,7 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 import type { ActivityFilter, SearchIssuesResponse, SortOption } from '../lib/types'
 import type { RootState } from './index'
+import { summarizeMergedPrs } from '../lib/pulse'
 
 export interface IssueQueryArgs {
   languages: string[]
@@ -112,15 +113,7 @@ export const githubApi = createApi({
         if (prsRes.error) return { error: prsRes.error }
         const prs = (prsRes.data as SearchIssuesResponse).items
 
-        const external = prs.filter((p) => p.user.login.toLowerCase() !== owner.toLowerCase())
-        const mergeDays = prs
-          .map((p) => {
-            const closed = (p as { closed_at?: string }).closed_at
-            if (!closed) return null
-            return (new Date(closed).getTime() - new Date(p.created_at).getTime()) / 86_400_000
-          })
-          .filter((d): d is number => d !== null)
-          .sort((a, b) => a - b)
+        const stats = summarizeMergedPrs(prs, owner)
 
         return {
           data: {
@@ -128,11 +121,7 @@ export const githubApi = createApi({
             archived: meta.archived,
             stars: meta.stargazers_count,
             openIssues: meta.open_issues_count,
-            mergedSampleSize: prs.length,
-            externalMergedCount: external.length,
-            medianDaysToMerge: mergeDays.length
-              ? Math.round(mergeDays[Math.floor(mergeDays.length / 2)] * 10) / 10
-              : null,
+            ...stats,
           },
         }
       },

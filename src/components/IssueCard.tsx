@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { mergeVerdict } from '../lib/pulse'
 import { Link } from 'react-router-dom'
 import { SignInButton } from '@clerk/clerk-react'
 import type { GitHubIssue } from '../lib/types'
@@ -9,9 +10,9 @@ import {
   DEMO_TRY_LIMIT,
   FREE_ADVICE_DAILY_LIMIT,
   FREE_REALITY_CHECK_DAILY_LIMIT,
-  useAdviceQuota,
-  useDemoTry,
-  useRealityCheckQuota,
+  consumeAdviceQuota,
+  consumeDemoTry,
+  consumeRealityCheckQuota,
 } from '../store/settingsSlice'
 import { useLazyRepoPulseQuery, type RepoPulse } from '../store/githubApi'
 import { clerkEnabled, useAuth } from '../lib/auth'
@@ -85,7 +86,7 @@ function AdvicePanel({ issue, repo }: { issue: GitHubIssue; repo: string }) {
       setAdvice(lines)
       setState('done')
       // Real AI runs count against quota; the fallback checklist below never does
-      if (!unlimitedAdvice) dispatch(signedIn ? useAdviceQuota() : useDemoTry())
+      if (!unlimitedAdvice) dispatch(signedIn ? consumeAdviceQuota() : consumeDemoTry())
     } catch {
       setAdvice(FALLBACK_ADVICE)
       setState('fallback')
@@ -145,19 +146,7 @@ function AdvicePanel({ issue, repo }: { issue: GitHubIssue; repo: string }) {
   )
 }
 
-function verdict(pulse: RepoPulse): { icon: string; label: string; cls: string } {
-  const daysSincePush = (Date.now() - new Date(pulse.pushedAt).getTime()) / 86_400_000
-  if (pulse.archived) return { icon: '⚰️', label: 'Archived — do not contribute', cls: 'text-red-400' }
-  if (pulse.mergedSampleSize === 0)
-    return { icon: '🚩', label: 'No recently merged PRs — your PR may rot', cls: 'text-red-400' }
-  if (daysSincePush > 90) return { icon: '💀', label: 'Maintainers gone quiet (90+ days)', cls: 'text-red-400' }
-  const externalRatio = pulse.externalMergedCount / pulse.mergedSampleSize
-  if (daysSincePush <= 30 && externalRatio >= 0.4)
-    return { icon: '✅', label: 'Healthy — outsiders get merged here', cls: 'text-emerald-400' }
-  if (externalRatio < 0.2)
-    return { icon: '⚠️', label: 'Mostly insider merges — expect slow review', cls: 'text-amber-400' }
-  return { icon: '🙂', label: 'Reasonably active', cls: 'text-amber-300' }
-}
+const verdict = (pulse: RepoPulse) => mergeVerdict(pulse)
 
 function RealityCheck({ repo }: { repo: string }) {
   const [trigger, { data, isFetching, isError }] = useLazyRepoPulseQuery()
@@ -170,7 +159,7 @@ function RealityCheck({ repo }: { repo: string }) {
 
   const run = () => {
     if (!unlimitedChecks && triesLeft <= 0) return setGated(true)
-    if (!unlimitedChecks) dispatch(useRealityCheckQuota())
+    if (!unlimitedChecks) dispatch(consumeRealityCheckQuota())
     trigger(repo)
   }
 
