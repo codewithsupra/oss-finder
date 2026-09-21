@@ -20,6 +20,9 @@ export interface GitHubIssue {
     login: string
     avatar_url: string
   }
+  /** Author's relationship to the repo, e.g. OWNER, MEMBER, COLLABORATOR, CONTRIBUTOR, NONE. */
+  author_association?: string
+  closed_at?: string | null
 }
 
 export interface SearchIssuesResponse {

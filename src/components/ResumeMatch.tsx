@@ -8,8 +8,8 @@ import { useLazyRecommendReposForLanguagesQuery, type RecommendedRepo } from '..
 import {
   RESUME_DEMO_LIMIT,
   FREE_RESUME_DAILY_LIMIT,
-  useResumeDemoTry,
-  useResumeQuota,
+  consumeResumeDemoTry,
+  consumeResumeQuota,
 } from '../store/settingsSlice'
 import { clerkEnabled, useAuth } from '../lib/auth'
 
@@ -59,7 +59,7 @@ export function ResumeMatch() {
       if (found.length === 0) throw new Error('No matching repos found — try a different resume.')
       setRepos(found)
       setPhase('done')
-      if (!unlimited) dispatch(signedIn ? useResumeQuota() : useResumeDemoTry())
+      if (!unlimited) dispatch(signedIn ? consumeResumeQuota() : consumeResumeDemoTry())
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : 'Something went wrong.')
       setPhase('error')
